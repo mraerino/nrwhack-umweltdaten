@@ -134,7 +134,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                    auto last-response="{{ medianValues }}"></iron-ajax>
 
         <app-drawer-layout fullbleed class$="[[ getHostClass(hasCity) ]]">
-            <geo-location id="userLocation" on-geo-response="_onGeo" ></geo-location><!--idle-->
+            <geo-location id="userLocation" on-geo-response="_onGeo" on-geo-error="_onGeoError"></geo-location><!--idle-->
             <paper-toolbar id="topBar">
                 <span class="title">Airradar</span>
                 <paper-icon-button icon="search" on-tap="toggleSearch"></paper-icon-button>
@@ -243,6 +243,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             ],
 
             attached: function() {
+                this.$.userLocation.idle = false;
+                this._fetching = true;
             },
 
             locateMe: function (e) {
@@ -259,6 +261,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 this.set('userLng', e.detail.longitude);
                 this.set('lat', e.detail.latitude);
                 this.set('lng', e.detail.longitude);
+            },
+
+            _onGeoError: function() {
+                this._fetching = false;
             },
 
             _onLocationData: function(data) {
