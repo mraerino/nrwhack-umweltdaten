@@ -56,6 +56,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             app-drawer-layout {
                 /*position: relative;*/
                 /*min-height: 100%;*/
+                margin-top: 56px;
             }
 
             #mapContainer {
@@ -70,6 +71,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 background: #fff;
                 --paper-card-background-color: #ccc;
                 padding-bottom: 10px;
+                max-height: 100%;
+                overflow-y: scroll;
             }
 
             #infobox paper-toolbar {
@@ -87,6 +90,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             #topBar {
                 --paper-toolbar-background: var(--app-primary-color);
+                --paper-toolbar-height: 56px;
+                position: fixed;
+                z-index: 1000;
+                top: 0;
+                left: 0;
+                right: 0;
             }
 
             #topBar .title {
@@ -234,9 +243,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             ],
 
             attached: function() {
-                //var height = document.body.offsetHeight + 'px';
-                //this.style.height = height;
-                //this.$$('app-drawer-layout').style.height = height;
             },
 
             locateMe: function (e) {
@@ -246,7 +252,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             },
 
             _onGeo: function(e) {
-                console.log(e);
                 if(this._fetching) {
                     this._fetching = false;
                 }
@@ -270,7 +275,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             onCity: function(city) {
                 if(this.database && this.dataLabels && city in this.database) {
                     var data = this.database[city];
-                    console.log(data);
                     if(!this.currentData) {
                         this.currentData = [];
                     }
@@ -295,15 +299,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             onHasCity: function(val) {
                 this.async(function() {
-                    console.log(this.$$('app-drawer-layout').offsetHeight);
-                    console.log(this.$$('#topBar').offsetHeight);
                     if(val) {
                         var height = this.$.infobox.offsetHeight;
-                        console.log(height);
-                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - (this.$$('#topBar').offsetHeight + height)) + 'px';
-                        console.log(this.$.mapContainer.style.height);
+                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - height) + 'px';
                     } else {
-                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - this.$$('#topBar').offsetHeight) + 'px';
+                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight) + 'px';
                     }
                     this.async(function() {
                         this.$.map.notifyResize();
