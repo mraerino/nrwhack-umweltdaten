@@ -154,7 +154,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-card id="infobox" heading="[[ city ]]">
                 <div class="card-content">
                     <template is="dom-repeat" items="[[ currentData ]]">
-                        <p class$="[[ dataClass(item.value, item.avg) ]]">[[ item.label ]]: <span class="value">[[ formatNumber(item.value) ]]</span></p>
+                        <p class$="[[ dataClass(item.value, item.avg) ]]">[[ item.label ]]: <span class="value">[[ formatNumber(item.value) ]] [[ getPercent(item.value, item.avg) ]]</span></p>
                     </template>
                 </div>
             </paper-card>
@@ -355,6 +355,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             formatNumber: function(val) {
                 return String(Math.round(val * 100) / 100).replace('.', ',');
+            },
+
+            getPercent: function(val, median) {
+                if(!median) {
+                    return '';
+                }
+
+                var perc = Math.round((val - median) / median * 10000) / 100;
+                return '(' + (perc > 0 ? '+' : '') + String(perc) + '%)';
             }
         });
     </script>
