@@ -94,12 +94,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 color: #fff;
                 float: right;
             }
+
+            .red .value {
+                color: red;
+            }
+
+            .green .value {
+                color: green;
+            }
+
+            #searchbar {
+                position: absolute;
+                z-index: 100;
+                width: 100%;
+            }
         </style>
 
-        <iron-ajax url="https://maps.googleapis.com/maps/api/geocode/json?latlng=[[ lat ]],[[ lng ]]&result_type=administrative_area_level_2&key=[[ apiKey ]]"
+        <iron-ajax url="https://maps.googleapis.com/maps/api/geocode/json?latlng=[[ userLat ]],[[ userLng ]]&result_type=administrative_area_level_2&key=[[ apiKey ]]"
                    last-response="{{ locationData }}" auto></iron-ajax>
+        <iron-ajax url="https://cdn.rawgit.com/tastatur/hackathon-database/master/labels.json" auto last-response="{{ dataLabels }}"></iron-ajax>
         <iron-ajax id="searchRequest" url="https://maps.googleapis.com/maps/api/geocode/json?components=locality:[[ searchQuery ]]|administrative_area=NRW&key=[[ apiKey ]]"
                    on-response="parseSearch"></iron-ajax>
+        <iron-ajax url="https://rawgit.com/tastatur/hackathon-database/master/merged.json"
+                   auto last-response="{{ database }}"></iron-ajax>
 
         <app-drawer-layout fullbleed class$="[[ getHostClass(hasCity) ]]">
             <geo-location id="userLocation" on-geo-response="_onGeo" ></geo-location><!--idle-->
@@ -115,16 +132,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                             latitude="[[ lat ]]"
                             longitude="[[ lng ]]"
                             zoom="11"
-                            disable-map-type-control disable-default-ui
+                            disable-map-type-control
                             api-key="[[ apiKey ]]"
                             on-tap="mapClick"></google-map>
             </div>
             <paper-card id="infobox" heading="[[ city ]]">
                 <div class="card-content">
-                    <p>Daten Teaser</p>
-                    <p>
-                        <paper-button raised>Details</paper-button>
-                    </p>
+                    <template is="dom-repeat" items="[[ currentData ]]">
+                        <p class$="[[ dataClass(item.value, item.avg) ]]">[[ item.label ]]: <span class="value">[[ item.value ]]</span></p>
+                    </template>
                 </div>
             </paper-card>
         </app-drawer-layout>
@@ -159,6 +175,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     type: Number,
                     value: 6.7809626
                 },
+                userLat: {
+                    type: Number
+                },
+                userLng: {
+                    type: Number
+                },
                 _fetching: {
                     type: Boolean,
                     value: false
@@ -187,11 +209,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     value: function() {
                         return '';
                     }
+                },
+                database: {
+                    type: Object
+                },
+                currentData: {
+                    type: Array
+                },
+                averages: {
+                    type: Object
                 }
             },
 
             observers: [
-                 '_onLocationData(locationData)'
+                '_onLocationData(locationData)',
+                'onCity(city)',
+                'onData(database)',
+                'onHasCity(hasCity, database, averages.*)'
             ],
 
             locateMe: function (e) {
@@ -205,6 +239,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 if(this._fetching) {
                     this._fetching = false;
                 }
+                this.set('userLat', e.detail.latitude);
+                this.set('userLng', e.detail.longitude);
                 this.set('lat', e.detail.latitude);
                 this.set('lng', e.detail.longitude);
             },
@@ -220,6 +256,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 }
             },
 
+            onCity: function(city) {
+                if(this.database && this.dataLabels && city in this.database) {
+                    var data = this.database[city];
+                    console.log(data);
+                    if(!this.currentData) {
+                        this.currentData = [];
+                    }
+                    this.splice('currentData', 0, this.currentData.length);
+                    Object.keys(data).forEach(function(key) {
+                        this.push('currentData', {
+                            label: this.dataLabels[key],
+                            value: data[key],
+                            avg: this.averages[key]
+                        });
+                    }.bind(this));
+                }
+            },
+
             isCity: function(city) {
                 return !!city;
             },
@@ -228,14 +282,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 this.async(function() {
                     if(val) {
                         var height = this.$.infobox.offsetHeight;
-                        this.$.mapContainer.style.height = (this.$.mapContainer.offsetHeight - height) + 'px';
+                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - this.$$('#topBar').offsetHeight - height) + 'px';
                     } else {
-                        this.$.mapContainer.style.height = '100%';
+                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - this.$$('#topBar').offsetHeight) + 'px';
                     }
                     this.async(function() {
                         this.$.map.notifyResize();
                     });
-                });
+                }, 20);
             },
 
             getHostClass: function(city) {
@@ -245,6 +299,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             toggleSearch: function() {
                 this.searchEnabled = !this.searchEnabled;
                 this.$.map.notifyResize();
+                if(this.searchEnabled) {
+                    this.async(function() {
+                        console.log(this.$$('#searchbar').shadowRoot.querySelectorAll('iron-input'));
+                    });
+                }
             },
 
             onSearchKey: function(e) {
@@ -268,6 +327,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 } else {
                     this.city = null;
                 }
+            },
+
+            onData: function(data) {
+                this.averages = {};
+                var reverse = {};
+                Object.keys(data).forEach(function(key) {
+                    var values = data[key];
+                    Object.keys(values).forEach(function(key) {
+                        if(!reverse[key]) {
+                            reverse[key] = [];
+                        }
+                        reverse[key].push(values[key]);
+                    }.bind(this));
+                }.bind(this));
+                Object.keys(reverse).forEach(function(key) {
+                    this.averages[key] = this.median(reverse[key]);
+                }.bind(this));
+            },
+
+            median: function(values) {
+
+                values.sort( function(a,b) {return a - b;} );
+
+                var half = Math.floor(values.length/2);
+
+                if(values.length % 2)
+                    return values[half];
+                else
+                    return (values[half-1] + values[half]) / 2.0;
+            },
+
+            dataClass: function(val, avg) {
+                return (val > avg) ? 'red' : 'green';
             }
         });
     </script>
