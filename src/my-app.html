@@ -34,6 +34,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
                 display: block;
                 width: 100%;
+                height: 100vh;
             }
 
             app-header {
@@ -53,7 +54,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
 
             app-drawer-layout {
-                position: relative;
+                /*position: relative;*/
+                /*min-height: 100%;*/
             }
 
             #mapContainer {
@@ -231,9 +233,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             ],
 
             attached: function() {
-                var height = document.body.offsetHeight + 'px';
-                this.style.height = height;
-                this.$$('app-drawer-layout').style.height = height;
+                //var height = document.body.offsetHeight + 'px';
+                //this.style.height = height;
+                //this.$$('app-drawer-layout').style.height = height;
             },
 
             locateMe: function (e) {
@@ -288,16 +290,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             onHasCity: function(val) {
                 this.async(function() {
+                    console.log(this.$$('app-drawer-layout').offsetHeight);
+                    console.log(this.$$('#topBar').offsetHeight);
                     if(val) {
                         var height = this.$.infobox.offsetHeight;
-                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - this.$$('#topBar').offsetHeight - height) + 'px';
+                        console.log(height);
+                        this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - (this.$$('#topBar').offsetHeight + height)) + 'px';
+                        console.log(this.$.mapContainer.style.height);
                     } else {
                         this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - this.$$('#topBar').offsetHeight) + 'px';
                     }
                     this.async(function() {
                         this.$.map.notifyResize();
                     });
-                }, 20);
+                }, 100);
             },
 
             getHostClass: function(city) {
@@ -307,11 +313,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             toggleSearch: function() {
                 this.searchEnabled = !this.searchEnabled;
                 this.$.map.notifyResize();
-                if(this.searchEnabled) {
-                    this.async(function() {
-                        console.log(this.$$('#searchbar').shadowRoot.querySelectorAll('iron-input'));
-                    });
-                }
             },
 
             onSearchKey: function(e) {
