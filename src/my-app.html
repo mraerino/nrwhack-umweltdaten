@@ -24,6 +24,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 
 <dom-module id="my-app">
     <template>
@@ -148,8 +149,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                             longitude="[[ lng ]]"
                             zoom="11"
                             disable-map-type-control
-                            api-key="[[ apiKey ]]"
-                            on-tap="mapClick"></google-map>
+                            api-key="[[ apiKey ]]"></google-map>
             </div>
             <paper-card id="infobox" heading="[[ city ]]">
                 <div class="card-content">
@@ -180,6 +180,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <script>
         Polymer({
             is: 'my-app',
+            behaviors: [ Polymer.IronResizableBehavior ],
 
             properties: {
                 lat: {
@@ -212,8 +213,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 },
                 hasCity: {
                     type: Boolean,
-                    computed: 'isCity(city)',
-                    observer: 'onHasCity'
+                    computed: 'isCity(city)'
                 },
                 searchEnabled: {
                     type: Boolean,
@@ -239,8 +239,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             observers: [
                 '_onLocationData(locationData)',
                 'onCity(city, database, medianValues)',
-                'onHasCity(hasCity, currentData, city)'
+                'onResize(hasCity, currentData.*, city)'
             ],
+
+            listeners: {
+                'iron-resize': 'onResize'
+            },
 
             attached: function() {
                 this.$.userLocation.idle = false;
@@ -303,9 +307,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 return !!city;
             },
 
-            onHasCity: function(val) {
+            onResize: function() {
                 this.async(function() {
-                    if(val) {
+                    if(this.hasCity) {
                         var height = this.$.infobox.offsetHeight;
                         this.$.mapContainer.style.height = (this.$$('app-drawer-layout').offsetHeight - height) + 'px';
                     } else {
