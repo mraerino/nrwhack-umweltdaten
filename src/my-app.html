@@ -14,9 +14,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
+<link rel="import" href="../bower_components/paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-search/paper-search-bar.html">
 <link rel="import" href="../bower_components/google-map/google-map.html">
 <link rel="import" href="../bower_components/geo-location/geo-location.html">
-<link rel="import" href="my-icons.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
 
 <dom-module id="my-app">
     <template>
@@ -37,22 +43,106 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             app-header paper-icon-button {
                 --paper-icon-button-ink-color: white;
             }
+
+            paper-dialog paper-button paper-spinner-lite {
+                width: 20px;
+                height: 20px;
+                --paper-spinner-stroke-width: 2px;
+                margin-left: 5px;
+            }
+
+            app-drawer-layout {
+                position: relative;
+            }
+
+            #mapContainer {
+                height: 100%;
+            }
+
+            #infobox {
+                position: absolute;
+                top: 100%;
+                bottom: 0;
+                width: 100%;
+                background: #fff;
+                --paper-card-background-color: #ccc;
+                padding-bottom: 10px;
+            }
+
+            #infobox paper-toolbar {
+                font-size: 150%;
+            }
+
+            #infobox paper-button {
+                float: right;
+                background-color: var(--app-primary-color);
+            }
+
+            .info-open #infobox {
+                top: auto;
+            }
+
+            #topBar {
+                --paper-toolbar-background: var(--app-primary-color);
+            }
+
+            #topBar .title {
+                margin-left: 0;
+            }
+
+            #topBar paper-icon-button {
+                color: #fff;
+                float: right;
+            }
         </style>
 
-        <app-drawer-layout fullbleed>
-            <geo-location id="userLocation" on-geo-response="_onGeo" idle></geo-location>
-            <google-map latitude="[[ lat ]]"
-                        longitude="[[ lng ]]"
-                        zoom="9"
-                        api-key="AIzaSyC30uplqmPNaMhzbZFi55UqQ2Hk8lD8Xlc"></google-map>
+        <iron-ajax url="https://maps.googleapis.com/maps/api/geocode/json?latlng=[[ lat ]],[[ lng ]]&result_type=administrative_area_level_2&key=[[ apiKey ]]"
+                   last-response="{{ locationData }}" auto></iron-ajax>
+        <iron-ajax id="searchRequest" url="https://maps.googleapis.com/maps/api/geocode/json?components=locality:[[ searchQuery ]]|administrative_area=NRW&key=[[ apiKey ]]"
+                   on-response="parseSearch"></iron-ajax>
+
+        <app-drawer-layout fullbleed class$="[[ getHostClass(hasCity) ]]">
+            <geo-location id="userLocation" on-geo-response="_onGeo" ></geo-location><!--idle-->
+            <paper-toolbar id="topBar">
+                <span class="title">Umweltradar</span>
+                <paper-icon-button icon="search" on-tap="toggleSearch"></paper-icon-button>
+            </paper-toolbar>
+            <template is="dom-if" if="[[ searchEnabled ]]">
+                <paper-search-bar id="searchbar" hide-filter-button placeholder="Suchen in NRW" on-keydown="onSearchKey"></paper-search-bar>
+            </template>
+            <div id="mapContainer">
+                <google-map id="map"
+                            latitude="[[ lat ]]"
+                            longitude="[[ lng ]]"
+                            zoom="11"
+                            disable-map-type-control disable-default-ui
+                            api-key="[[ apiKey ]]"
+                            on-tap="mapClick"></google-map>
+            </div>
+            <paper-card id="infobox" heading="[[ city ]]">
+                <div class="card-content">
+                    <p>Daten Teaser</p>
+                    <p>
+                        <paper-button raised>Details</paper-button>
+                    </p>
+                </div>
+            </paper-card>
         </app-drawer-layout>
 
-        <paper-dialog id="startDialog" modal opened>
+        <!-- opened -->
+        <paper-dialog id="startDialog" modal>
             <p>Bitte gib deinen Standort frei, um Informationen zu deinem Aufenthaltsort zu erhalten.</p>
             <div class="buttons">
                 <paper-button dialog-confirm>Jetzt nicht</paper-button>
-                <paper-button autofocus on-tap="locateMe">Okay!</paper-button>
+                <paper-button raised autofocus on-tap="locateMe">
+                    Okay!
+                </paper-button>
             </div>
+        </paper-dialog>
+
+        <paper-dialog opened="[[ _fetching ]]">
+            <p>Standort bestimmen...</p>
+            <paper-spinner-lite active="[[ _fetching ]]"></paper-spinner-lite>
         </paper-dialog>
     </template>
 
@@ -68,18 +158,116 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 lng: {
                     type: Number,
                     value: 6.7809626
+                },
+                _fetching: {
+                    type: Boolean,
+                    value: false
+                },
+                apiKey: {
+                    type: String,
+                    value: "AIzaSyC30uplqmPNaMhzbZFi55UqQ2Hk8lD8Xlc"
+                },
+                locationData: {
+                    type: Object
+                },
+                city: {
+                    type: String
+                },
+                hasCity: {
+                    type: Boolean,
+                    computed: 'isCity(city)',
+                    observer: 'onHasCity'
+                },
+                searchEnabled: {
+                    type: Boolean,
+                    value: false
+                },
+                searchQuery: {
+                    type: String,
+                    value: function() {
+                        return '';
+                    }
                 }
             },
 
+            observers: [
+                 '_onLocationData(locationData)'
+            ],
+
             locateMe: function (e) {
+                this.$.startDialog.close();
+                this._fetching = true;
                 this.$.userLocation.idle = false;
             },
 
             _onGeo: function(e) {
                 console.log(e);
-                this.$.startDialog.close();
+                if(this._fetching) {
+                    this._fetching = false;
+                }
                 this.set('lat', e.detail.latitude);
                 this.set('lng', e.detail.longitude);
+            },
+
+            _onLocationData: function(data) {
+                if(data &&
+                   data.status == "OK" &&
+                   data.results.length > 0 &&
+                   data.results[0].address_components.length > 0) {
+                    this.city = data.results[0].address_components[0].long_name;
+                } else {
+                    this.city = null;
+                }
+            },
+
+            isCity: function(city) {
+                return !!city;
+            },
+
+            onHasCity: function(val) {
+                this.async(function() {
+                    if(val) {
+                        var height = this.$.infobox.offsetHeight;
+                        this.$.mapContainer.style.height = (this.$.mapContainer.offsetHeight - height) + 'px';
+                    } else {
+                        this.$.mapContainer.style.height = '100%';
+                    }
+                    this.async(function() {
+                        this.$.map.notifyResize();
+                    });
+                });
+            },
+
+            getHostClass: function(city) {
+                return (city ? 'info-open':'');
+            },
+
+            toggleSearch: function() {
+                this.searchEnabled = !this.searchEnabled;
+                this.$.map.notifyResize();
+            },
+
+            onSearchKey: function(e) {
+                if(e.keyCode == 13) {
+                    this.search()
+                }
+            },
+
+            search: function() {
+                var query = this.$$('#searchbar').query;
+                this.searchQuery = encodeURIComponent(query);
+                this.$.searchRequest.generateRequest();
+            },
+
+            parseSearch: function() {
+                var res = this.$.searchRequest.lastResponse;
+                if(res && res.status == "OK" && res.results && res.results.length > 0) {
+                    this.city = res.results[0].address_components[0].long_name;
+                    this.lat = res.results[0].geometry.location.lat;
+                    this.lng = res.results[0].geometry.location.lng;
+                } else {
+                    this.city = null;
+                }
             }
         });
     </script>
