@@ -1,0 +1,22 @@
+{
+  "name": "nrwhack-umweltdaten",
+  "version": "1.0.0",
+  "description": "[![Build Status](https://travis-ci.org/PolymerElements/polymer-starter-kit.svg?branch=master)](https://travis-ci.org/PolymerElements/polymer-starter-kit)",
+  "main": "service-worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mraerino/nrwhack-umweltdaten.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mraerino/nrwhack-umweltdaten/issues"
+  },
+  "homepage": "https://github.com/mraerino/nrwhack-umweltdaten#readme",
+  "dependencies": {
+    "polymer-cli": "^0.16.0"
+  }
+}
