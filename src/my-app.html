@@ -114,13 +114,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
         </style>
 
-        <iron-ajax url="https://maps.googleapis.com/maps/api/geocode/json?latlng=[[ userLat ]],[[ userLng ]]&result_type=administrative_area_level_2&key=[[ apiKey ]]"
+        <iron-ajax url="https://maps.googleapis.com/maps/api/geocode/json?region=de&latlng=[[ userLat ]],[[ userLng ]]&result_type=administrative_area_level_2&key=[[ apiKey ]]"
                    last-response="{{ locationData }}" auto></iron-ajax>
-        <iron-ajax url="https://cdn.rawgit.com/tastatur/hackathon-database/master/labels.json" auto last-response="{{ dataLabels }}"></iron-ajax>
-        <iron-ajax id="searchRequest" url="https://maps.googleapis.com/maps/api/geocode/json?components=locality:[[ searchQuery ]]|administrative_area=NRW&key=[[ apiKey ]]"
+        <iron-ajax url="https://rawgit.com/tastatur/hackathon-database/master/labels.json" auto last-response="{{ dataLabels }}"></iron-ajax>
+        <iron-ajax id="searchRequest" url="https://maps.googleapis.com/maps/api/geocode/json?region=de&components=locality:[[ searchQuery ]]|administrative_area=NRW&key=[[ apiKey ]]"
                    on-response="parseSearch"></iron-ajax>
         <iron-ajax url="https://rawgit.com/tastatur/hackathon-database/master/merged.json"
                    auto last-response="{{ database }}"></iron-ajax>
+        <iron-ajax url="https://rawgit.com/tastatur/hackathon-database/master/median.json"
+                   auto last-response="{{ medianValues }}"></iron-ajax>
 
         <app-drawer-layout fullbleed class$="[[ getHostClass(hasCity) ]]">
             <geo-location id="userLocation" on-geo-response="_onGeo" ></geo-location><!--idle-->
@@ -228,8 +230,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             observers: [
                 '_onLocationData(locationData)',
                 'onCity(city)',
-                'onData(database)',
-                'onHasCity(hasCity, database, averages.*)'
+                'onHasCity(hasCity, currentData, city)'
             ],
 
             attached: function() {
@@ -275,10 +276,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     }
                     this.splice('currentData', 0, this.currentData.length);
                     Object.keys(data).forEach(function(key) {
+                        var median = null;
+                        if(key in this.medianValues) {
+                            median = this.medianValues[key];
+                        }
                         this.push('currentData', {
                             label: this.dataLabels[key],
                             value: data[key],
-                            avg: this.averages[key]
+                            avg: median
                         });
                     }.bind(this));
                 }
@@ -338,37 +343,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 }
             },
 
-            onData: function(data) {
-                this.averages = {};
-                var reverse = {};
-                Object.keys(data).forEach(function(key) {
-                    var values = data[key];
-                    Object.keys(values).forEach(function(key) {
-                        if(!reverse[key]) {
-                            reverse[key] = [];
-                        }
-                        reverse[key].push(values[key]);
-                    }.bind(this));
-                }.bind(this));
-                Object.keys(reverse).forEach(function(key) {
-                    this.averages[key] = this.median(reverse[key]);
-                }.bind(this));
-            },
-
-            median: function(values) {
-
-                values.sort( function(a,b) {return a - b;} );
-
-                var half = Math.floor(values.length/2);
-
-                if(values.length % 2)
-                    return values[half];
-                else
-                    return (values[half-1] + values[half]) / 2.0;
-            },
-
             dataClass: function(val, avg) {
-                return (val > avg) ? 'red' : 'green';
+                return !!avg ? ((val > avg) ? 'red' : 'green') : '';
             },
 
             formatNumber: function(val) {
