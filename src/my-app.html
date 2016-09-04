@@ -13,6 +13,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="../bower_components/paper-header-panel/paper-header-panel.html">
@@ -25,6 +26,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+
+<link rel="import" href="my-credits.html">
 
 <dom-module id="my-app">
     <template>
@@ -121,6 +124,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 left: 0;
                 right: 0;
             }
+
+            #credits {
+                z-index: 2000;
+                margin: 0;
+            }
+
+            #credits paper-dialog-scrollable {
+                margin-top: 0;
+            }
+
+            #credits .buttons .title {
+                color: #000;
+                float: left;
+            }
         </style>
 
         <iron-ajax url="https://maps.googleapis.com/maps/api/geocode/json?region=de&latlng=[[ userLat ]],[[ userLng ]]&result_type=administrative_area_level_2&key=[[ apiKey ]]"
@@ -139,6 +156,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <geo-location id="userLocation" on-geo-response="_onGeo" on-geo-error="_onGeoError"></geo-location>
             <paper-toolbar id="topBar">
                 <span class="title">Airradar</span>
+                <paper-icon-button icon="info" on-tap="showCredits"></paper-icon-button>
                 <paper-icon-button icon="search" on-tap="toggleSearch"></paper-icon-button>
             </paper-toolbar>
             <template is="dom-if" if="[[ searchEnabled ]]">
@@ -164,6 +182,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <paper-dialog opened="[[ _fetching ]]">
             <p>Standort bestimmen...</p>
             <paper-spinner-lite active="[[ _fetching ]]"></paper-spinner-lite>
+        </paper-dialog>
+
+        <paper-dialog id="credits">
+            <div class="buttons">
+                <paper-icon-button dialog-confirm icon="close"></paper-icon-button>
+            </div>
+            <paper-dialog-scrollable>
+                <my-credits></my-credits>
+            </paper-dialog-scrollable>
         </paper-dialog>
     </template>
 
@@ -358,6 +385,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
                 var perc = Math.round((val - median) / median * 10000) / 100;
                 return '(' + (perc > 0 ? '+' : '') + String(perc) + '%)';
+            },
+
+            showCredits: function() {
+                this.$.credits.open();
             }
         });
     </script>
