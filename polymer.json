@@ -9,6 +9,7 @@
   "includeDependencies": [
     "manifest.json",
     "bower_components/webcomponentsjs/webcomponents-lite.min.js",
+    "bower_components/platinum-https-redirect/platinum-https-redirect.html",
     "data/merged.json",
     "data/labels.json",
     "data/median.json"
