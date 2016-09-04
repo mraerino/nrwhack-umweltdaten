@@ -105,7 +105,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             #topBar paper-icon-button {
                 color: #fff;
-                float: right;
             }
 
             .red .value {
@@ -137,7 +136,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                    auto last-response="{{ medianValues }}"></iron-ajax>
 
         <app-drawer-layout fullbleed class$="[[ getHostClass(hasCity) ]]">
-            <geo-location id="userLocation" on-geo-response="_onGeo" on-geo-error="_onGeoError"></geo-location><!--idle-->
+            <geo-location id="userLocation" on-geo-response="_onGeo" on-geo-error="_onGeoError"></geo-location>
             <paper-toolbar id="topBar">
                 <span class="title">Airradar</span>
                 <paper-icon-button icon="search" on-tap="toggleSearch"></paper-icon-button>
@@ -161,17 +160,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 </div>
             </paper-card>
         </app-drawer-layout>
-
-        <!-- opened -->
-        <paper-dialog id="startDialog" modal>
-            <p>Bitte gib deinen Standort frei, um Informationen zu deinem Aufenthaltsort zu erhalten.</p>
-            <div class="buttons">
-                <paper-button dialog-confirm>Jetzt nicht</paper-button>
-                <paper-button raised autofocus on-tap="locateMe">
-                    Okay!
-                </paper-button>
-            </div>
-        </paper-dialog>
 
         <paper-dialog opened="[[ _fetching ]]">
             <p>Standort bestimmen...</p>
