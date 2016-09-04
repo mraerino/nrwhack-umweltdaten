@@ -126,12 +126,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <iron-ajax url="https://maps.googleapis.com/maps/api/geocode/json?region=de&latlng=[[ userLat ]],[[ userLng ]]&result_type=administrative_area_level_2&key=[[ apiKey ]]"
                    last-response="{{ locationData }}" auto></iron-ajax>
-        <iron-ajax url="https://rawgit.com/tastatur/hackathon-database/master/labels.json" auto last-response="{{ dataLabels }}"></iron-ajax>
         <iron-ajax id="searchRequest" url="https://maps.googleapis.com/maps/api/geocode/json?region=de&components=locality:[[ searchQuery ]]|administrative_area=NRW&key=[[ apiKey ]]"
                    on-response="parseSearch"></iron-ajax>
-        <iron-ajax url="https://rawgit.com/tastatur/hackathon-database/master/merged.json"
+
+        <iron-ajax url="/data/merged.json"
                    auto last-response="{{ database }}"></iron-ajax>
-        <iron-ajax url="https://rawgit.com/tastatur/hackathon-database/master/median.json"
+        <iron-ajax url="/data/labels.json"
+                   auto last-response="{{ dataLabels }}"></iron-ajax>
+        <iron-ajax url="/data/median.json"
                    auto last-response="{{ medianValues }}"></iron-ajax>
 
         <app-drawer-layout fullbleed class$="[[ getHostClass(hasCity) ]]">
